@@ -1,9 +1,24 @@
-from tkinter import Tk, Text
+from tkinter import Tk, Text, Canvas
 import subprocess
+from PIL import ImageTk, Image
+import geotiler
 
 window = Tk()
-lat = 35.6769047216897
 lon = 139.76209723465706
+lat = 35.6769047216897
+
+width, height = 512, 512
+
+panel = Canvas(window, width=width, height=height)
+panel.pack(expand=True)
+
+def update_map():
+    map = geotiler.Map(center=(lon, lat), zoom=19, size=(512, 512))
+    image = geotiler.render_map(map)
+    img = ImageTk.PhotoImage(image)
+    panel.create_image(0, 0, image=img, anchor='nw')
+    panel.image = img
+    panel.create_oval(width / 2, height / 2, width / 2, height / 2, width=5)
 
 
 def move(direction):
@@ -19,6 +34,8 @@ def move(direction):
     elif direction == 'down':
         lat -= step_size
 
+    update_map()
+
     subprocess.run(['idevicesetlocation', str(lat), str(lon)])
 
 
@@ -33,8 +50,9 @@ def init_window():
     bind_keys(['<Up>', 'w', 'k'], 'up')
     bind_keys(['<Down>', 's', 'j'], 'down')
 
+    update_map()
+
     window.title('ios-location-changer')
-    window.configure(bg='#856ff8')
     window.mainloop()
 
 
