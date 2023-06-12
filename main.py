@@ -7,19 +7,25 @@ window = Tk()
 lon = 139.76209723465706
 lat = 35.6769047216897
 
-width, height = 512, 512
+width, height, zoom = 512, 512, 17
 
 panel = Canvas(window, width=width, height=height)
 panel.pack(expand=True)
 
 def update_map():
-    map = geotiler.Map(center=(lon, lat), zoom=19, size=(512, 512))
+    map = geotiler.Map(center=(lon, lat), zoom=zoom, size=(width, height))
     image = geotiler.render_map(map)
     img = ImageTk.PhotoImage(image)
     panel.create_image(0, 0, image=img, anchor='nw')
     panel.image = img
     panel.create_oval(width / 2, height / 2, width / 2, height / 2, width=5)
+    print(map.extent[0])
 
+def zoom_by(amount):
+    global zoom
+    if zoom + amount < 20 and zoom + amount > 6:
+        zoom += amount 
+    update_map()
 
 def move(direction):
     global lat, lon
@@ -49,6 +55,9 @@ def init_window():
     bind_keys(['<Right>', 'd', 'l'], 'right')
     bind_keys(['<Up>', 'w', 'k'], 'up')
     bind_keys(['<Down>', 's', 'j'], 'down')
+
+    window.bind('+', lambda x: zoom_by(+1))
+    window.bind('-', lambda x: zoom_by(-1))
 
     update_map()
 
