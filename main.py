@@ -4,28 +4,44 @@ from PIL import ImageTk, Image
 import geotiler
 
 window = Tk()
-lon = 139.76209723465706
 lat = 35.6769047216897
+lon = 139.76209723465706
+
+lat_center = lat
+lon_center = lon
 
 width, height, zoom = 512, 512, 17
 
 panel = Canvas(window, width=width, height=height)
 panel.pack(expand=True)
 
+boundaries = []
+
+def draw_dot(x, y):
+    panel.create_oval(x, y, x, y, width=5, outline='red')
+
+def draw_location():
+    panel.create_image(0, 0, image=panel.image, anchor='nw')
+    draw_dot(width * (lon - boundaries[0]) / (boundaries[2] - boundaries[0]), \
+             height * (lat - boundaries[3]) / (boundaries[1] - boundaries[3]))
+
+
 def update_map():
-    map = geotiler.Map(center=(lon, lat), zoom=zoom, size=(width, height))
+    global boundaries
+    map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom, \
+                       size=(width, height), provider='stamen-toner')
     image = geotiler.render_map(map)
     img = ImageTk.PhotoImage(image)
-    panel.create_image(0, 0, image=img, anchor='nw')
     panel.image = img
-    panel.create_oval(width / 2, height / 2, width / 2, height / 2, width=5)
-    print(map.extent[0])
+    boundaries = map.extent
+
 
 def zoom_by(amount):
     global zoom
     if zoom + amount < 20 and zoom + amount > 6:
         zoom += amount 
     update_map()
+    draw_location()
 
 def move(direction):
     global lat, lon
@@ -40,7 +56,7 @@ def move(direction):
     elif direction == 'down':
         lat -= step_size
 
-    update_map()
+    draw_location()
 
     subprocess.run(['idevicesetlocation', str(lat), str(lon)])
 
@@ -60,6 +76,7 @@ def init_window():
     window.bind('-', lambda x: zoom_by(-1))
 
     update_map()
+    draw_location()
 
     window.title('ios-location-changer')
     window.mainloop()
