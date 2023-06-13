@@ -62,8 +62,7 @@ def zoom_by(amount):
     global zoom
     if zoom + amount < 19 and zoom + amount > 6:
         zoom += amount 
-    update_map()
-    draw_location()
+    update()
 
 def update():
     update_map()
@@ -102,8 +101,7 @@ def init_window():
     window.bind('+', lambda x: zoom_by(+1))
     window.bind('-', lambda x: zoom_by(-1))
 
-    update_map()
-    draw_location()
+    update()
 
     window.title('ios-location-changer')
     window.mainloop()
