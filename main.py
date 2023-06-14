@@ -1,4 +1,4 @@
-from tkinter import Tk, Text, Canvas
+from tkinter import Tk, Canvas
 import subprocess
 from PIL import ImageTk, Image
 import geotiler
@@ -11,7 +11,7 @@ window = Tk()
 lat = 35.6769047216897
 lon = 139.76209723465706
 
-cache = Cache('cache.dbm')
+cache = Cache('cache.db')
 
 downloader = partial(caching_downloader, cache.get, cache.set, fetch_tiles)
 
@@ -20,13 +20,18 @@ lon_center = lon
 
 width, height, zoom = 512, 512, 15
 
-panel = Canvas(window, width=width, height=height)
-panel.pack(expand=True)
+canvas = Canvas(window, width=width, height=height)
+canvas.pack(expand=True)
 
 boundaries = []
 
-def draw_dot(x, y):
-    panel.create_oval(x, y, x, y, width=5, outline='red')
+marker = ImageTk.PhotoImage(file='assets/marker.png')
+marker_id = None
+
+def move_marker(n_x, n_y):
+    x, y, *_ = canvas.bbox(marker_id)
+    canvas.move(marker_id, n_x - x - marker.width() / 2, \
+                n_y - y - marker.height())
 
 def draw_location():
     global lon_center, lat_center
@@ -45,24 +50,27 @@ def draw_location():
         lat_center = boundaries[3] - lat_diff / 2
         update()
 
-    panel.create_image(0, 0, image=panel.image, anchor='nw')
-    draw_dot(width * (lon - boundaries[0]) / lon_diff,
+    move_marker(width * (lon - boundaries[0]) / lon_diff,
              height * (lat - boundaries[3]) / lat_diff)
 
 def update_map():
-    global boundaries
+    global boundaries, marker_id
 
     map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom, \
                        size=(width, height), provider='stamen-toner')
     image = geotiler.render_map(map, downloader=downloader)
     img = ImageTk.PhotoImage(image)
-    panel.image = img
+    canvas.image = img
+    canvas.create_image(0, 0, image=canvas.image, anchor='nw')
+
+    marker_id = canvas.create_image(0, 0, image=marker)
+
     boundaries = map.extent
 
 def zoom_by(amount):
     global zoom
-    if zoom + amount < 19 and zoom + amount > 6:
-        zoom += amount 
+    if zoom + amount < 19 and zoom + amount > 3:
+        zoom += amount
     update()
 
 def update():
@@ -98,6 +106,7 @@ def init_window():
 
     window.bind('+', lambda x: zoom_by(+1))
     window.bind('-', lambda x: zoom_by(-1))
+
 
     update()
 
