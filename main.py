@@ -2,21 +2,23 @@ from tkinter import Tk, Text, Canvas
 import subprocess
 from PIL import ImageTk, Image
 import geotiler
-import redis
-import functools
-from geotiler.cache import redis_downloader
+from cache import Cache
+from geotiler.cache import caching_downloader
+from geotiler.tile.io import fetch_tiles
+from functools import partial
 
 window = Tk()
 lat = 35.6769047216897
 lon = 139.76209723465706
 
-client = redis.Redis('localhost')
-downloader = redis_downloader(client)
+cache = Cache('cache.dbm')
+
+downloader = partial(caching_downloader, cache.get, cache.set, fetch_tiles)
 
 lat_center = lat
 lon_center = lon
 
-width, height, zoom = 512, 512, 17
+width, height, zoom = 512, 512, 15
 
 panel = Canvas(window, width=width, height=height)
 panel.pack(expand=True)
@@ -49,11 +51,10 @@ def draw_location():
 
 def update_map():
     global boundaries
-    render_map = functools.partial(geotiler.render_map, downloader=downloader)
 
     map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom, \
                        size=(width, height), provider='stamen-toner')
-    image = render_map(map)
+    image = geotiler.render_map(map, downloader=downloader)
     img = ImageTk.PhotoImage(image)
     panel.image = img
     boundaries = map.extent
@@ -67,7 +68,6 @@ def zoom_by(amount):
 def update():
     update_map()
     draw_location()
-
 
 def move(direction):
     global lat, lon
@@ -86,11 +86,9 @@ def move(direction):
 
     subprocess.run(['idevicesetlocation', str(lat), str(lon)])
 
-
 def bind_keys(keys, direction):
     for key in keys:
         window.bind(key, lambda x: move(direction))
-
 
 def init_window():
     bind_keys(['<Left>', 'a', 'h'], 'left')
@@ -105,7 +103,6 @@ def init_window():
 
     window.title('ios-location-changer')
     window.mainloop()
-
 
 if __name__ == '__main__':
     init_window()
