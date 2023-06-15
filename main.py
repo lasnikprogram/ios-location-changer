@@ -6,6 +6,8 @@ from cache import Cache
 from geotiler.cache import caching_downloader
 from geotiler.tile.io import fetch_tiles
 from functools import partial
+from multiprocessing.pool import ThreadPool
+import sys
 
 window = Tk()
 lat = 35.6769047216897
@@ -27,6 +29,8 @@ boundaries = []
 
 marker = ImageTk.PhotoImage(file='assets/marker.png')
 marker_id = None
+
+pool = ThreadPool(processes=1)
 
 def move_marker(n_x, n_y):
     x, y, *_ = canvas.bbox(marker_id)
@@ -57,7 +61,7 @@ def update_map():
     global boundaries, marker_id
 
     map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom, \
-                       size=(width, height), provider='stamen-toner')
+                       size=(width, height), provider='osm')
     image = geotiler.render_map(map, downloader=downloader)
     img = ImageTk.PhotoImage(image)
     canvas.image = img
@@ -77,6 +81,17 @@ def update():
     update_map()
     draw_location()
 
+def run_command():
+    response = subprocess.run(['idevicesetlocation', str(lat), str(lon)],
+                              capture_output=True, text=True)
+
+    if 'Make sure a developer disk image is mounted!' in response.stdout:
+        #TODO: automatically mount image
+        pass
+    elif 'No device found!' in response.stdout:
+        print('Please attach a device via USB cable')
+        window.quit()
+
 def move(direction):
     global lat, lon
     step_size = 0.0001
@@ -90,9 +105,9 @@ def move(direction):
     elif direction == 'down':
         lat -= step_size
 
-    draw_location()
+    async_result = pool.apply_async(run_command)
 
-    subprocess.run(['idevicesetlocation', str(lat), str(lon)])
+    draw_location()
 
 def bind_keys(keys, direction):
     for key in keys:
@@ -107,8 +122,9 @@ def init_window():
     window.bind('+', lambda x: zoom_by(+1))
     window.bind('-', lambda x: zoom_by(-1))
 
-
     update()
+
+    async_result = pool.apply_async(run_command)
 
     window.title('ios-location-changer')
     window.mainloop()
