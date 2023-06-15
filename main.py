@@ -2,23 +2,21 @@ from tkinter import Tk, Canvas
 import subprocess
 from PIL import ImageTk, Image
 import geotiler
-from cache import Cache
 from geotiler.cache import caching_downloader
 from geotiler.tile.io import fetch_tiles
 from functools import partial
 from multiprocessing.pool import ThreadPool
-import sys
+
+from cache import Cache
+import utils
 
 window = Tk()
-lat = 35.6769047216897
-lon = 139.76209723465706
+lat_center = lat = 35.6769047216897
+lon_center = lon = 139.76209723465706
 
 cache = Cache('cache.db')
 
 downloader = partial(caching_downloader, cache.get, cache.set, fetch_tiles)
-
-lat_center = lat
-lon_center = lon
 
 width, height, zoom = 512, 512, 15
 
@@ -30,11 +28,11 @@ boundaries = []
 marker = ImageTk.PhotoImage(file='assets/marker.png')
 marker_id = None
 
-pool = ThreadPool(processes=1)
+pool = ThreadPool(processes=5)
 
 def move_marker(n_x, n_y):
     x, y, *_ = canvas.bbox(marker_id)
-    canvas.move(marker_id, n_x - x - marker.width() / 2, \
+    canvas.move(marker_id, n_x - x - marker.width() / 2,
                 n_y - y - marker.height())
 
 def draw_location():
@@ -60,7 +58,7 @@ def draw_location():
 def update_map():
     global boundaries, marker_id
 
-    map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom, \
+    map = geotiler.Map(center=(lon_center, lat_center), zoom=zoom,
                        size=(width, height), provider='osm')
     image = geotiler.render_map(map, downloader=downloader)
     img = ImageTk.PhotoImage(image)
@@ -82,12 +80,12 @@ def update():
     draw_location()
 
 def run_command():
+    utils.mount_developer_image(window)
     response = subprocess.run(['idevicesetlocation', str(lat), str(lon)],
                               capture_output=True, text=True)
 
     if 'Make sure a developer disk image is mounted!' in response.stdout:
-        #TODO: automatically mount image
-        pass
+        utils.mount_developer_image(window)
     elif 'No device found!' in response.stdout:
         print('Please attach a device via USB cable')
         window.quit()
