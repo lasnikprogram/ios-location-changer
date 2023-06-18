@@ -9,9 +9,20 @@ Install missing python modules:
 ```bash
 pip install Pillow geotiler
 ```
-Download and run the program:
+Download and run the program:  
+With `git`:
 ```bash
 git clone https://github.com/lasnikprogram/ios-location-changer && cd ios-location-changer
+python3 main.py
+```
+
+Without `git`:
+```bash
+wget https://github.com/lasnikprogram/ios-location-changer/archive/main.tar.gz
+tar xf main.tar.gz
+rm main.tar.gz
+mv ios-location-changer-main ios-location-changer
+cd ios-location-changer
 python3 main.py
 ```
 
