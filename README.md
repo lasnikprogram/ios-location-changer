@@ -1,6 +1,7 @@
 # ios-location-changer
 ## compatibility
 This program is only tested on Debain using IOS 15. But it should also work on other Linux distributions and IOS versions.  
+Windows will be supported soon, get the libimobiledevice binaries from [here](https://github.com/libimobiledevice-win32/imobiledevice-net/releases/tag/v1.3.17)  
 *Note for IOS 16: The program requires the activation of [IOS Developer Mode](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device).*
 
 ## installation
